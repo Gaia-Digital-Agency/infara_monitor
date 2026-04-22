@@ -1,35 +1,91 @@
 {
-  "generated_at": "2026-04-22T05:07:22Z",
+  "generated_at": "2026-04-22T05:08:48Z",
   "hosts": [
     {
       "alias": "gda-ce01",
-      "reachable": false,
-      "ssh_error": "no result",
-      "checked_at": "2026-04-22T05:07:22Z"
+      "reachable": true,
+      "hostname": "gda-ce01.asia-southeast1-b.c.gda-viceroy.internal",
+      "uptime": "up 4 weeks, 2 days, 3 hours, 32 minutes",
+      "kernel": "6.17.0-1009-gcp",
+      "os": "Ubuntu 24.04.4 LTS",
+      "load1": 1.04,
+      "load5": 1.24,
+      "load15": 1.90,
+      "cpu_used_pct": 100.0,
+      "mem_total_mb": 7936,
+      "mem_used_mb": 4062,
+      "mem_used_pct": 51.2,
+      "disk_total_gb": 144.3,
+      "disk_used_gb": 100.2,
+      "disk_used_pct": 70,
+      "checked_at": "2026-04-22T05:08:43Z",
+      "ssh_error": null
     },
     {
       "alias": "gda-ai01",
-      "reachable": false,
-      "ssh_error": "no result",
-      "checked_at": "2026-04-22T05:07:22Z"
+      "reachable": true,
+      "hostname": "gda-ai01.asia-southeast1-b.c.gda-viceroy.internal",
+      "uptime": "up 2 weeks, 3 hours, 26 minutes",
+      "kernel": "6.1.0-44-cloud-amd64",
+      "os": "Debian GNU/Linux 12 (bookworm)",
+      "load1": 0.02,
+      "load5": 0.04,
+      "load15": 0.02,
+      "cpu_used_pct": 17.5,
+      "mem_total_mb": 7950,
+      "mem_used_mb": 3854,
+      "mem_used_pct": 48.5,
+      "disk_total_gb": 29.3,
+      "disk_used_gb": 23.2,
+      "disk_used_pct": 83,
+      "checked_at": "2026-04-22T05:08:43Z",
+      "ssh_error": null
     },
     {
       "alias": "gda-s01",
-      "reachable": false,
-      "ssh_error": "no result",
-      "checked_at": "2026-04-22T05:07:22Z"
+      "reachable": true,
+      "hostname": "gda-s01.asia-southeast1-b.c.gda-viceroy.internal",
+      "uptime": "up 1 week, 11 hours, 9 minutes",
+      "kernel": "6.17.0-1010-gcp",
+      "os": "Ubuntu 24.04.4 LTS",
+      "load1": 1.36,
+      "load5": 1.41,
+      "load15": 1.31,
+      "cpu_used_pct": 54.3,
+      "mem_total_mb": 7936,
+      "mem_used_mb": 3454,
+      "mem_used_pct": 43.5,
+      "disk_total_gb": 47.4,
+      "disk_used_gb": 32.9,
+      "disk_used_pct": 70,
+      "checked_at": "2026-04-22T05:08:43Z",
+      "ssh_error": null
     },
     {
       "alias": "hostinger-vps",
-      "reachable": false,
-      "ssh_error": "no result",
-      "checked_at": "2026-04-22T05:07:22Z"
+      "reachable": true,
+      "hostname": "srv599617.hstgr.cloud",
+      "uptime": "up 3 weeks, 6 days, 13 hours, 44 minutes",
+      "kernel": "4.18.0-553.111.1.el8_10.x86_64",
+      "os": "AlmaLinux 8.10 (Cerulean Leopard)",
+      "load1": 1.89,
+      "load5": 1.77,
+      "load15": 2.03,
+      "cpu_used_pct": 6.5,
+      "mem_total_mb": 32142,
+      "mem_used_mb": 7816,
+      "mem_used_pct": 24.3,
+      "disk_total_gb": 398.8,
+      "disk_used_gb": 144.8,
+      "disk_used_pct": 37,
+      "checked_at": "2026-04-22T05:08:43Z",
+      "ssh_error": null
     },
     {
       "alias": "hostinger-wp",
       "reachable": false,
-      "ssh_error": "ssh: connect to host 88.223.90.222 port 65002: Connection timed out\r",
-      "checked_at": "2026-04-22T05:07:14Z"
+      "ssh_error": "bash: line 25: /dev/fd/63: No such file or directory",
+      "checked_at": "2026-04-22T05:08:43Z"
     }
   ]
 }
