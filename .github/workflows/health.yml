@@ -13,6 +13,10 @@ name: health
 #                      five real hostnames (not the aliases)
 on:
   workflow_dispatch:
+  schedule:
+    # 04:00 Asia/Singapore (GMT+8) == 20:00 UTC the previous day.
+    # GitHub cron is always UTC.
+    - cron: "0 20 * * *"
 
 permissions:
   contents: write

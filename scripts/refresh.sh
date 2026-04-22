@@ -127,8 +127,17 @@ REMOTE
 # ----------------------------------------------------------------------
 probe_host() {
   local alias="$1"
-  local kind
+  local kind address port
   kind=$(host_kind "$alias")
+  # Resolve the effective HostName + Port from ssh config (works both
+  # locally and on the CI runner, since the workflow materialises
+  # ~/.ssh/config before calling this script).
+  address=$(ssh -G "$alias" 2>/dev/null | awk 'tolower($1)=="hostname"{print $2; exit}')
+  port=$(ssh -G "$alias" 2>/dev/null | awk 'tolower($1)=="port"{print $2; exit}')
+  [ -n "$address" ] || address="unknown"
+  if [ -n "$port" ] && [ "$port" != "22" ]; then
+    address="$address:$port"
+  fi
   local out="$TMP_DIR/$alias.json"
   local log="$TMP_DIR/$alias.log"
   local checked_at
@@ -145,6 +154,7 @@ probe_host() {
     jq -Rn \
       --arg alias "$alias" \
       --arg kind "$kind" \
+      --arg address "$address" \
       --arg checked_at "$checked_at" \
       --rawfile raw "$log" '
         ($raw
@@ -155,6 +165,7 @@ probe_host() {
         | {
             alias: $alias,
             kind: $kind,
+            address: $address,
             reachable: true,
             hostname: ($kv.HOSTNAME // null),
             uptime: ($kv.UPTIME // null),
@@ -182,11 +193,13 @@ probe_host() {
     jq -n \
       --arg alias "$alias" \
       --arg kind "$kind" \
+      --arg address "$address" \
       --arg err "$err" \
       --arg checked_at "$checked_at" '
         {
           alias: $alias,
           kind: $kind,
+          address: $address,
           reachable: false,
           ssh_error: $err,
           checked_at: $checked_at

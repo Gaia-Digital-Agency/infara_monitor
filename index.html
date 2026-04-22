@@ -278,6 +278,7 @@
             <span class="hostname">${alias}</span>
             <span class="overall-status"><span class="dot dot-red"></span><span class="status-label">Unreachable</span></span>
           </div>
+          <div class="row"><span class="label">Address</span><span class="value">${escapeHtml(host.address || "—")}</span></div>
           <div class="error">${escapeHtml(host.ssh_error || "SSH connection failed")}</div>
           <div class="footer-meta">Checked ${escapeHtml(formatTs(host.checked_at))} (${escapeHtml(ago(host.checked_at))})</div>
         </div>`;
@@ -293,6 +294,7 @@
           <span class="hostname">${alias}${sharedBadge}</span>
           <span class="overall-status"><span class="dot dot-${status}"></span><span class="status-label">${status}</span></span>
         </div>
+        <div class="row"><span class="label">Address</span><span class="value">${escapeHtml(host.address || "—")}</span></div>
         <div class="row"><span class="label">Hostname</span><span class="value">${escapeHtml(host.hostname || "—")}</span></div>
         <div class="row"><span class="label">Uptime</span><span class="value">${escapeHtml(host.uptime || "—")}</span></div>
         <div class="row" title="Average number of runnable processes over 1, 5, and 15 minutes. On an N-core box, anything under N means idle capacity; equal to N is fully busy; above N means work is queueing."><span class="label">Load</span><span class="value">${num(host.load1, 2)} <span class="sub">1m</span> · ${num(host.load5, 2)} <span class="sub">5m</span> · ${num(host.load15, 2)} <span class="sub">15m</span></span></div>
