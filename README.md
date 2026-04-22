@@ -141,6 +141,37 @@ Hosts tagged `kind: "shared"` in `scripts/refresh.sh` (e.g. `hostinger-wp`) are 
 
 The header badge on the dashboard rolls up to the worst per-host status.
 
+## Alerts
+
+Each workflow run (including the daily 04:00 Asia/Singapore cron) grades the fresh snapshot and keeps a single rolling GitHub issue in sync with what's broken. Watchers get email from `notifications@github.com` on state changes — not on every cron run.
+
+| Scenario | What the workflow does | Email |
+| --- | --- | --- |
+| All green | Closes the open alert issue (if any) with a ✅ resolution comment | One (on the close comment) |
+| New problem | Opens `🚨 Health alert — <summary>`, labels it `health-alert`, @mentions recipients | One (issue opened) |
+| Same problem as last run | Edits the issue body in place (new snapshot time/values) | **Silent** |
+| Status worsened / new host joined / partial recovery | Edits body + posts a state-change comment | One per state change |
+| Full recovery | Closes issue with resolution comment | One |
+
+**To subscribe (receive email):**
+
+1. The workflow @mentions `@azlangaida` and `@gda-gusde` — they get email automatically when opened/commented. Configured in [`health.yml`](.github/workflows/health.yml) under `ALERT_MENTIONS`.
+2. For anyone else: visit the repo → **Watch → Custom → Issues** (or **All activity**). Check spam if nothing arrives — the sender is `notifications@github.com`.
+3. For mentions to deliver on a **private** repo, the mentioned accounts must be collaborators. On a public repo it's unconditional.
+
+**To snooze** (e.g. during planned maintenance):
+
+Add the label `health-alert-snoozed` to the open alert issue. The workflow will still refresh the body each run but will not post state-change comments while the label is present — so no more email until you remove it. Labels are one-click on the issue sidebar.
+
+**Thresholds** are the same ones the dashboard uses (core-aware for VPS hosts, disk-only for shared), so anything that turns a dashboard card yellow or red will also open/update the alert issue.
+
+**Testing the grader locally** (no GitHub changes, prints what the email would say):
+
+```bash
+./scripts/grade-snapshot.sh data/health.json /tmp/alert.md
+cat /tmp/alert.md     # empty if all green
+```
+
 ## Requirements
 
 - **Runner** (Mac or CI): `bash`, `ssh`, `jq`, `git`, `awk`, `date`.

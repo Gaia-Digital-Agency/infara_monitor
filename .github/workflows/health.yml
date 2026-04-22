@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: health-refresh
@@ -73,6 +74,15 @@ jobs:
 
       - name: Run refresh.sh
         run: ./scripts/refresh.sh
+
+      - name: Grade snapshot + reconcile alert issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALERT_MENTIONS: "@azlangaida @gda-gusde"
+        run: |
+          ./scripts/grade-snapshot.sh data/health.json /tmp/alert.md > /tmp/grade.json
+          echo "Grade: $(cat /tmp/grade.json)"
+          ./scripts/reconcile-alert-issue.sh /tmp/grade.json /tmp/alert.md
 
       - name: Scrub ~/.ssh
         if: always()
