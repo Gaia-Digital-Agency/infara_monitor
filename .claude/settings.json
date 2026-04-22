@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git restore:*)",
+      "Bash(git remote:*)",
+      "Bash(git init)",
+      "Bash(ssh gda-ce01:*)",
+      "Bash(ssh gda-ai01:*)",
+      "Bash(ssh gda-s01:*)",
+      "Bash(ssh hostinger-vps:*)",
+      "Bash(ssh hostinger-wp:*)",
+      "Bash(./scripts/refresh.sh)",
+      "Bash(bash scripts/refresh.sh)",
+      "Bash(jq:*)",
+      "Bash(cat data/health.json)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ]
+  }
+}

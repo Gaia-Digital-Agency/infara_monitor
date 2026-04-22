@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+._*
+
+# Editor cruft
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / JS (none of it used, but safe)
+node_modules/
+
+# Local overrides / scratch
+*.local
+tmp/
+.tmp/

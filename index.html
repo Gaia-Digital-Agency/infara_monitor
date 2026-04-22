@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gaia Digital Agency · Infrastructure Monitor</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%233fb950'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --panel-border: #30363d;
+      --text: #c9d1d9;
+      --text-dim: #8b949e;
+      --text-muted: #6e7681;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --gray: #6e7681;
+      --track: rgba(255, 255, 255, 0.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1.5rem 4rem;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    code, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+    .container { max-width: 1280px; margin: 0 auto; }
+    header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+    h1 .subtitle { color: var(--text-dim); font-weight: 400; margin-left: 0.35rem; }
+    .meta {
+      color: var(--text-dim);
+      font-size: 0.875rem;
+      margin-top: 0.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1rem;
+      align-items: center;
+    }
+    .overall-status { display: inline-flex; align-items: center; gap: 0.55rem; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-green { background: var(--green); box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.18); }
+    .dot-yellow { background: var(--yellow); box-shadow: 0 0 0 3px rgba(210, 153, 34, 0.18); }
+    .dot-red { background: var(--red); box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.18); }
+    .dot-gray { background: var(--gray); }
+    .btn {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover { background: #1f242c; border-color: #484f58; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      border-left-width: 3px;
+    }
+    .card.status-green { border-left-color: var(--green); }
+    .card.status-yellow { border-left-color: var(--yellow); }
+    .card.status-red { border-left-color: var(--red); }
+    .card.status-gray { border-left-color: var(--gray); }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 0.75rem;
+    }
+    .hostname { font-size: 1.05rem; font-weight: 600; font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: -0.01em; }
+    .status-label {
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      padding: 0.15rem 0;
+    }
+    .row .label { color: var(--text-dim); }
+    .row .value { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+    .metric { margin: 0.85rem 0; }
+    .metric-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      align-items: baseline;
+    }
+    .metric-head .label {
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+    }
+    .metric-head .value { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.8rem; }
+    .bar {
+      height: 6px;
+      background: var(--track);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 0.35rem;
+    }
+    .bar-fill { height: 100%; transition: width 0.4s ease; border-radius: 3px; }
+    .bar-fill.g { background: var(--green); }
+    .bar-fill.y { background: var(--yellow); }
+    .bar-fill.r { background: var(--red); }
+    .footer-meta {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--panel-border);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      line-height: 1.5;
+    }
+    .error {
+      color: var(--red);
+      font-size: 0.85rem;
+      margin: 0.5rem 0;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      word-break: break-word;
+    }
+    .empty-note { color: var(--text-muted); font-size: 0.85rem; }
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    footer a { color: var(--text-dim); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+    @media (max-width: 520px) {
+      body { padding: 1.25rem 1rem 3rem; }
+      h1 { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Gaia Digital Agency<span class="subtitle">· Infrastructure Monitor</span></h1>
+        <div class="meta">
+          <span class="overall-status"><span id="overall-dot" class="dot dot-gray"></span><span id="overall-label">Loading…</span></span>
+          <span id="last-updated">—</span>
+        </div>
+      </div>
+      <button class="btn" onclick="location.reload()">Refresh view</button>
+    </header>
+
+    <div class="grid" id="grid">
+      <div class="empty-note">Loading health snapshot…</div>
+    </div>
+
+    <footer>
+      Snapshot source: <a href="data/health.json">data/health.json</a>
+      · Refreshed on demand via <code>./scripts/refresh.sh</code> or the GitHub Actions <em>health</em> workflow
+    </footer>
+  </div>
+
+  <script>
+  (function () {
+    const HOSTS = ["gda-ce01", "gda-ai01", "gda-s01", "hostinger-vps", "hostinger-wp"];
+
+    function formatTs(iso) {
+      if (!iso) return "never";
+      const d = new Date(iso);
+      if (isNaN(d)) return String(iso);
+      return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    }
+
+    function ago(iso) {
+      if (!iso) return "";
+      const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+      if (isNaN(diff) || diff < 0) return "";
+      if (diff < 60) return Math.floor(diff) + "s ago";
+      if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+      if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+      return Math.floor(diff / 86400) + "d ago";
+    }
+
+    function barClass(pct, warn, danger) {
+      if (pct >= danger) return "r";
+      if (pct >= warn) return "y";
+      return "g";
+    }
+
+    function num(v, digits) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "—";
+      return Number(v).toFixed(digits);
+    }
+
+    function rollup(host) {
+      if (!host.reachable) return "red";
+      const load = host.load1 || 0;
+      const mem = host.mem_used_pct || 0;
+      const disk = host.disk_used_pct || 0;
+      if (load >= 4 || mem >= 90 || disk >= 95) return "red";
+      if (load >= 2 || mem >= 80 || disk >= 85) return "yellow";
+      return "green";
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str).replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function renderCard(host) {
+      const alias = escapeHtml(host.alias);
+      if (!host.checked_at) {
+        return `<div class="card status-gray">
+          <div class="card-head">
+            <span class="hostname">${alias}</span>
+            <span class="overall-status"><span class="dot dot-gray"></span><span class="status-label">Never checked</span></span>
+          </div>
+          <div class="empty-note">Run <code>./scripts/refresh.sh</code> to collect the first snapshot.</div>
+        </div>`;
+      }
+      if (!host.reachable) {
+        return `<div class="card status-red">
+          <div class="card-head">
+            <span class="hostname">${alias}</span>
+            <span class="overall-status"><span class="dot dot-red"></span><span class="status-label">Unreachable</span></span>
+          </div>
+          <div class="error">${escapeHtml(host.ssh_error || "SSH connection failed")}</div>
+          <div class="footer-meta">Checked ${escapeHtml(formatTs(host.checked_at))} (${escapeHtml(ago(host.checked_at))})</div>
+        </div>`;
+      }
+      const status = rollup(host);
+      const cpu = Math.max(0, Math.min(100, host.cpu_used_pct || 0));
+      const mem = Math.max(0, Math.min(100, host.mem_used_pct || 0));
+      const disk = Math.max(0, Math.min(100, host.disk_used_pct || 0));
+      return `<div class="card status-${status}">
+        <div class="card-head">
+          <span class="hostname">${alias}</span>
+          <span class="overall-status"><span class="dot dot-${status}"></span><span class="status-label">${status}</span></span>
+        </div>
+        <div class="row"><span class="label">Hostname</span><span class="value">${escapeHtml(host.hostname || "—")}</span></div>
+        <div class="row"><span class="label">Uptime</span><span class="value">${escapeHtml(host.uptime || "—")}</span></div>
+        <div class="row"><span class="label">Load avg</span><span class="value">${num(host.load1, 2)} / ${num(host.load5, 2)} / ${num(host.load15, 2)}</span></div>
+
+        <div class="metric">
+          <div class="metric-head">
+            <span class="label">CPU</span>
+            <span class="value">${num(host.cpu_used_pct, 1)}%</span>
+          </div>
+          <div class="bar"><div class="bar-fill ${barClass(cpu, 70, 90)}" style="width:${cpu}%"></div></div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-head">
+            <span class="label">Memory</span>
+            <span class="value">${host.mem_used_mb ?? "—"} / ${host.mem_total_mb ?? "—"} MB · ${num(host.mem_used_pct, 1)}%</span>
+          </div>
+          <div class="bar"><div class="bar-fill ${barClass(mem, 80, 90)}" style="width:${mem}%"></div></div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-head">
+            <span class="label">Disk /</span>
+            <span class="value">${host.disk_used_gb ?? "—"} / ${host.disk_total_gb ?? "—"} GB · ${num(host.disk_used_pct, 1)}%</span>
+          </div>
+          <div class="bar"><div class="bar-fill ${barClass(disk, 85, 95)}" style="width:${disk}%"></div></div>
+        </div>
+
+        <div class="footer-meta">
+          ${escapeHtml(host.os || "—")} · ${escapeHtml(host.kernel || "—")}<br>
+          Checked ${escapeHtml(formatTs(host.checked_at))} (${escapeHtml(ago(host.checked_at))})
+        </div>
+      </div>`;
+    }
+
+    function overallRollup(hosts) {
+      let worst = "green";
+      let anyChecked = false;
+      for (const h of hosts) {
+        if (!h.checked_at) continue;
+        anyChecked = true;
+        const r = rollup(h);
+        if (r === "red") return "red";
+        if (r === "yellow" && worst !== "red") worst = "yellow";
+      }
+      return anyChecked ? worst : "gray";
+    }
+
+    fetch("data/health.json?t=" + Date.now(), { cache: "no-store" })
+      .then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(data => {
+        const hostsByAlias = {};
+        for (const h of (data.hosts || [])) hostsByAlias[h.alias] = h;
+        const hosts = HOSTS.map(alias => hostsByAlias[alias] || { alias });
+
+        const overall = overallRollup(hosts);
+        document.getElementById("overall-dot").className = "dot dot-" + overall;
+        document.getElementById("overall-label").textContent = ({
+          green: "All systems operational",
+          yellow: "Degraded",
+          red: "Issues detected",
+          gray: "No snapshot yet"
+        })[overall];
+
+        const ts = data.generated_at;
+        document.getElementById("last-updated").textContent =
+          ts ? `Snapshot ${formatTs(ts)} (${ago(ts)})` : "No snapshot yet";
+
+        document.getElementById("grid").innerHTML = hosts.map(renderCard).join("");
+      })
+      .catch(err => {
+        document.getElementById("grid").innerHTML =
+          `<div class="error">Failed to load data/health.json: ${escapeHtml(err.message)}</div>`;
+      });
+  })();
+  </script>
+</body>
+</html>

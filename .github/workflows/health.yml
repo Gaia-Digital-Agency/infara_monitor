@@ -1,0 +1,76 @@
+name: health
+
+# Manual trigger only — run from the GitHub Actions UI or with:
+#   gh workflow run health.yml
+#
+# Requires three repo secrets (Settings → Secrets and variables → Actions):
+#   SSH_PRIVATE_KEY  — private key authorized on all five hosts
+#   SSH_CONFIG       — Host blocks for the five aliases (gda-ce01, gda-ai01,
+#                      gda-s01, hostinger-vps, hostinger-wp) as they appear in
+#                      the operator's ~/.ssh/config, BUT with
+#                      IdentityFile rewritten to ~/.ssh/id_ed25519
+#   SSH_KNOWN_HOSTS  — output of `ssh-keyscan -H <host1> <host2> ...` for all
+#                      five real hostnames (not the aliases)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: health-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # persist-credentials defaults to true — lets the script git-push via GITHUB_TOKEN
+          ref: main
+
+      - name: Install jq
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -yqq jq
+          fi
+          jq --version
+
+      - name: Reconstruct ~/.ssh from secrets
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_CONFIG: ${{ secrets.SSH_CONFIG }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ] || [ -z "${SSH_CONFIG:-}" ] || [ -z "${SSH_KNOWN_HOSTS:-}" ]; then
+            echo "::error::One or more required secrets are missing: SSH_PRIVATE_KEY, SSH_CONFIG, SSH_KNOWN_HOSTS"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY"  > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_CONFIG"       > ~/.ssh/config
+          printf '%s\n' "$SSH_KNOWN_HOSTS"  > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/config ~/.ssh/known_hosts
+          # Quick sanity check — prove the key parses without printing it
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
+          echo "SSH set up for aliases:"
+          grep -iE '^Host ' ~/.ssh/config | sed 's/^/  /'
+
+      - name: Configure git identity
+        run: |
+          git config user.email "ai@gaiada.com"
+          git config user.name  "Gaia health bot"
+
+      - name: Run refresh.sh
+        run: ./scripts/refresh.sh
+
+      - name: Scrub ~/.ssh
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_ed25519 ~/.ssh/config ~/.ssh/known_hosts

@@ -1,0 +1,10 @@
+{
+  "generated_at": null,
+  "hosts": [
+    { "alias": "gda-ce01", "checked_at": null },
+    { "alias": "gda-ai01", "checked_at": null },
+    { "alias": "gda-s01", "checked_at": null },
+    { "alias": "hostinger-vps", "checked_at": null },
+    { "alias": "hostinger-wp", "checked_at": null }
+  ]
+}
