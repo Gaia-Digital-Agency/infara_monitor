@@ -74,8 +74,11 @@ cpu_sample() {
     print total, idle
   }' /proc/stat
 }
+# Sample window is 1.5 s. Shorter windows (we had 0.4 s) are dominated by
+# the probe's own awk/ps/sh forks and read as ~100% even on an idle box.
+# 1.5 s dilutes that to <5% and still keeps the whole probe under ~4 s.
 set -- $(cpu_sample); T1=$1; I1=$2
-sleep 0.4
+sleep 1.5
 set -- $(cpu_sample); T2=$1; I2=$2
 DT=$((T2 - T1))
 DI=$((I2 - I1))

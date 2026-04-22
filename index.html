@@ -297,14 +297,14 @@
         <div class="row"><span class="label">Address</span><span class="value">${escapeHtml(host.address || "—")}</span></div>
         <div class="row"><span class="label">Hostname</span><span class="value">${escapeHtml(host.hostname || "—")}</span></div>
         <div class="row"><span class="label">Uptime</span><span class="value">${escapeHtml(host.uptime || "—")}</span></div>
-        <div class="row" title="Average number of runnable processes over 1, 5, and 15 minutes. On an N-core box, anything under N means idle capacity; equal to N is fully busy; above N means work is queueing."><span class="label">Load</span><span class="value">${num(host.load1, 2)} <span class="sub">1m</span> · ${num(host.load5, 2)} <span class="sub">5m</span> · ${num(host.load15, 2)} <span class="sub">15m</span></span></div>
+        <div class="row" title="Average number of runnable processes over 1, 5, and 15 minutes. On an N-core box, anything under N means idle capacity; equal to N is fully busy; above N means work is queueing."><span class="label">Load</span><span class="value">${num(host.load1, 2)} <span class="sub">1m</span> · ${num(host.load5, 2)} <span class="sub">5m</span> · ${num(host.load15, 2)} <span class="sub">15m</span>${host.kind === 'shared' ? '<span class="shared-note">(host-wide)</span>' : ''}</span></div>
 
-        <div class="metric">
+        <div class="metric" title="${host.kind === 'shared' ? 'Shared host: /proc/stat is the whole physical box, not our tenant. Number shown but ignored by status rollup.' : 'Sampled from /proc/stat over a 1.5s window.'}">
           <div class="metric-head">
             <span class="label">CPU</span>
-            <span class="value">${num(host.cpu_used_pct, 1)}%</span>
+            <span class="value">${num(host.cpu_used_pct, 1)}%${host.kind === 'shared' ? '<span class="shared-note">(host-wide)</span>' : ''}</span>
           </div>
-          <div class="bar"><div class="bar-fill ${barClass(cpu, 70, 90)}" style="width:${cpu}%"></div></div>
+          <div class="bar"><div class="bar-fill ${host.kind === 'shared' ? 'g' : barClass(cpu, 70, 90)}" style="width:${cpu}%; opacity:${host.kind === 'shared' ? '0.35' : '1'}"></div></div>
         </div>
 
         <div class="metric">
