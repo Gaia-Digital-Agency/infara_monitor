@@ -1,10 +1,35 @@
 {
-  "generated_at": null,
+  "generated_at": "2026-04-22T04:59:55Z",
   "hosts": [
-    { "alias": "gda-ce01", "checked_at": null },
-    { "alias": "gda-ai01", "checked_at": null },
-    { "alias": "gda-s01", "checked_at": null },
-    { "alias": "hostinger-vps", "checked_at": null },
-    { "alias": "hostinger-wp", "checked_at": null }
+    {
+      "alias": "gda-ce01",
+      "reachable": false,
+      "ssh_error": "azlan@34.158.47.112: Permission denied (publickey).\r",
+      "checked_at": "2026-04-22T04:59:48Z"
+    },
+    {
+      "alias": "gda-ai01",
+      "reachable": false,
+      "ssh_error": "azlan@34.143.206.68: Permission denied (publickey).\r",
+      "checked_at": "2026-04-22T04:59:48Z"
+    },
+    {
+      "alias": "gda-s01",
+      "reachable": false,
+      "ssh_error": "azlan@34.124.244.233: Permission denied (publickey).\r",
+      "checked_at": "2026-04-22T04:59:48Z"
+    },
+    {
+      "alias": "hostinger-vps",
+      "reachable": false,
+      "ssh_error": "root@88.222.245.253: Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).\r",
+      "checked_at": "2026-04-22T04:59:48Z"
+    },
+    {
+      "alias": "hostinger-wp",
+      "reachable": false,
+      "ssh_error": "u521276830@88.223.90.222: Permission denied (publickey,password).\r",
+      "checked_at": "2026-04-22T04:59:48Z"
+    }
   ]
 }
