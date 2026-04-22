@@ -54,36 +54,22 @@ On the GitHub repo: **Settings → Pages → Source: `Deploy from a branch` → 
 
 ### 3. Configure secrets for the CI refresh
 
-Three repo secrets drive the Actions workflow (**Settings → Secrets and variables → Actions → New repository secret**):
-
-| Secret | Contents |
-| --- | --- |
-| `SSH_PRIVATE_KEY` | The private key authorized on all five hosts. Paste the full key including the `-----BEGIN/END-----` lines. |
-| `SSH_CONFIG` | Host blocks for the five aliases from the operator's `~/.ssh/config`, **with `IdentityFile` rewritten to `~/.ssh/id_ed25519`** so it matches where CI writes the key. |
-| `SSH_KNOWN_HOSTS` | Output of `ssh-keyscan -H <real-hostname-1> <real-hostname-2> …` for all five hosts (use the real `HostName` values from the config, not the aliases). |
-
-Example `SSH_CONFIG`:
-
-```
-Host gda-ce01
-  HostName ce01.gaiada.example
-  User ops
-  IdentityFile ~/.ssh/id_ed25519
-Host gda-ai01
-  HostName ai01.gaiada.example
-  User ops
-  IdentityFile ~/.ssh/id_ed25519
-# …and so on for the remaining three hosts
-```
-
-Generating `SSH_KNOWN_HOSTS`:
+Three **repository** secrets drive the Actions workflow (**Settings → Secrets and variables → Actions → New repository secret**). A helper script resolves the first two for you against the operator's live `~/.ssh/config`:
 
 ```bash
-ssh-keyscan -H ce01.gaiada.example ai01.gaiada.example s01.gaiada.example \
-            <hostinger-vps-real> <hostinger-wp-real>
+cd ~/Downloads/gaiada_infra_monitor
+./scripts/gen-secrets.sh
 ```
 
-Paste the full output into the secret.
+It uses `ssh -G <alias>` to print effective config (honouring Includes, Match blocks, etc.), then emits:
+
+| Secret | How it's produced |
+| --- | --- |
+| `SSH_CONFIG` | The five Host blocks from `~/.ssh/config` — copied verbatim. The CI workflow writes the key to the same path your config references (`~/.ssh/id_ed25519_gaia`), so no rewriting needed. |
+| `SSH_KNOWN_HOSTS` | `ssh-keyscan -H -p <port> <real-hostname>` for each of the five hosts. |
+| `SSH_PRIVATE_KEY` | The contents of `~/.ssh/id_ed25519_gaia` on the operator's Mac. Copy into the secret manually — e.g. `pbcopy < ~/.ssh/id_ed25519_gaia`, then paste into GitHub. |
+
+If the identity-file diagnostic shows more than one key across the five hosts, either consolidate to a single key authorized on all five, or extend `.github/workflows/health.yml` to materialize multiple keys and keep per-host `IdentityFile` entries in `SSH_CONFIG`.
 
 ## Refreshing the dashboard
 
@@ -104,7 +90,7 @@ From the Actions tab, open the **health** workflow and click **Run workflow** �
 gh workflow run health.yml
 ```
 
-The workflow reconstructs `~/.ssh/{config,id_ed25519,known_hosts}` from the three secrets above, runs the same `scripts/refresh.sh`, and lets the script commit/push using the workflow's `GITHUB_TOKEN`. Keys are scrubbed from the runner on exit.
+The workflow reconstructs `~/.ssh/{config,id_ed25519_gaia,known_hosts}` from the three secrets above, runs the same `scripts/refresh.sh`, and lets the script commit/push using the workflow's `GITHUB_TOKEN`. Keys are scrubbed from the runner on exit.
 
 ## Status thresholds
 
