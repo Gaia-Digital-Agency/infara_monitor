@@ -54,6 +54,8 @@ fi
 read LOAD1 LOAD5 LOAD15 _REST < /proc/loadavg
 
 # CPU % — two samples of /proc/stat 0.4s apart, compute non-idle fraction.
+# Use command substitution (not process substitution) so this works on
+# restricted shared-hosting shells that don't mount /dev/fd.
 cpu_sample() {
   awk '/^cpu / {
     total = $2+$3+$4+$5+$6+$7+$8+$9
@@ -61,9 +63,9 @@ cpu_sample() {
     print total, idle
   }' /proc/stat
 }
-read T1 I1 < <(cpu_sample)
+set -- $(cpu_sample); T1=$1; I1=$2
 sleep 0.4
-read T2 I2 < <(cpu_sample)
+set -- $(cpu_sample); T2=$1; I2=$2
 DT=$((T2 - T1))
 DI=$((I2 - I1))
 if [ "$DT" -gt 0 ]; then
