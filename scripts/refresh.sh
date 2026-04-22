@@ -53,6 +53,7 @@ set -eu
 HOSTNAME_VAL=$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo unknown)
 UPTIME_VAL=$(uptime -p 2>/dev/null || uptime 2>/dev/null | sed 's/^[^,]*up //;s/,  *[0-9]* user.*//' || echo unknown)
 KERNEL_VAL=$(uname -r 2>/dev/null || echo unknown)
+NCPU_VAL=$(nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo 2>/dev/null || echo 1)
 
 OS_VAL="unknown"
 if [ -r /etc/os-release ]; then
@@ -112,6 +113,7 @@ printf 'HOSTNAME|||%s\n'      "$HOSTNAME_VAL"
 printf 'UPTIME|||%s\n'        "$UPTIME_VAL"
 printf 'KERNEL|||%s\n'        "$KERNEL_VAL"
 printf 'OS|||%s\n'            "$OS_VAL"
+printf 'NCPU|||%s\n'          "$NCPU_VAL"
 printf 'LOAD1|||%s\n'         "$LOAD1"
 printf 'LOAD5|||%s\n'         "$LOAD5"
 printf 'LOAD15|||%s\n'        "$LOAD15"
@@ -174,6 +176,7 @@ probe_host() {
             uptime: ($kv.UPTIME // null),
             kernel: ($kv.KERNEL // null),
             os: ($kv.OS // null),
+            ncpu: (try ($kv.NCPU | tonumber) catch null),
             load1:  (try ($kv.LOAD1  | tonumber) catch null),
             load5:  (try ($kv.LOAD5  | tonumber) catch null),
             load15: (try ($kv.LOAD15 | tonumber) catch null),
@@ -245,18 +248,20 @@ echo "→ wrote $OUT_FILE"
 jq -r '
   .hosts[] |
   if .reachable then
-    # Shared hosts see /proc stats for the whole physical box, not the
-    # tenant — ignore load/mem thresholds there and grade on disk only.
-    (if .kind == "shared" then
-       (if .disk_used_pct >= 95 then "red"
-        elif .disk_used_pct >= 85 then "yellow"
-        else "green" end)
-     else
-       (if   (.load1 >= 4) or (.mem_used_pct >= 90) or (.disk_used_pct >= 95) then "red"
-        elif (.load1 >= 2) or (.mem_used_pct >= 80) or (.disk_used_pct >= 85) then "yellow"
-        else "green" end)
-     end) as $s
-    | "  \($s | ascii_upcase | .[0:1]) \(.alias)  load=\(.load1) mem=\(.mem_used_pct)% disk=\(.disk_used_pct)%  [\($s)\(if .kind == "shared" then " shared" else "" end)]"
+    # Core-aware load threshold: load1 is compared to core count rather than
+    # a hard number, so a 2-core box and a 32-core box are judged on the
+    # same "% of capacity used" basis.
+    (((.load1 // 0) / (.ncpu // 1)) as $lp
+     | if .kind == "shared" then
+         (if .disk_used_pct >= 95 then "red"
+          elif .disk_used_pct >= 85 then "yellow"
+          else "green" end)
+       else
+         (if   ($lp >= 2) or (.mem_used_pct >= 90) or (.disk_used_pct >= 95) then "red"
+          elif ($lp >= 1) or (.mem_used_pct >= 80) or (.disk_used_pct >= 85) then "yellow"
+          else "green" end)
+       end) as $s
+    | "  \($s | ascii_upcase | .[0:1]) \(.alias)  load=\(.load1)/\(.ncpu)c mem=\(.mem_used_pct)% disk=\(.disk_used_pct)%  [\($s)\(if .kind == "shared" then " shared" else "" end)]"
   else
     "  R \(.alias)  UNREACHABLE: \(.ssh_error)"
   end

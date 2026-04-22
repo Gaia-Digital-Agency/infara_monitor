@@ -248,10 +248,13 @@
         if (disk >= 85) return "yellow";
         return "green";
       }
-      const load = host.load1 || 0;
+      // Core-aware: a 2-core box and a 32-core box shouldn't share a
+      // hard load threshold. Compare load1 to core count.
+      const ncpu = host.ncpu || 1;
+      const loadPerCore = (host.load1 || 0) / ncpu;
       const mem = host.mem_used_pct || 0;
-      if (load >= 4 || mem >= 90 || disk >= 95) return "red";
-      if (load >= 2 || mem >= 80 || disk >= 85) return "yellow";
+      if (loadPerCore >= 2 || mem >= 90 || disk >= 95) return "red";
+      if (loadPerCore >= 1 || mem >= 80 || disk >= 85) return "yellow";
       return "green";
     }
 
@@ -297,7 +300,7 @@
         <div class="row"><span class="label">Address</span><span class="value">${escapeHtml(host.address || "—")}</span></div>
         <div class="row"><span class="label">Hostname</span><span class="value">${escapeHtml(host.hostname || "—")}</span></div>
         <div class="row"><span class="label">Uptime</span><span class="value">${escapeHtml(host.uptime || "—")}</span></div>
-        <div class="row" title="Average number of runnable processes over 1, 5, and 15 minutes. On an N-core box, anything under N means idle capacity; equal to N is fully busy; above N means work is queueing."><span class="label">Load</span><span class="value">${num(host.load1, 2)} <span class="sub">1m</span> · ${num(host.load5, 2)} <span class="sub">5m</span> · ${num(host.load15, 2)} <span class="sub">15m</span>${host.kind === 'shared' ? '<span class="shared-note">(host-wide)</span>' : ''}</span></div>
+        <div class="row" title="Average number of runnable processes over 1, 5, and 15 minutes. Fully busy at load = core count; anything below is idle capacity; above is work queueing. Thresholds are core-aware."><span class="label">Load</span><span class="value">${num(host.load1, 2)} <span class="sub">1m</span> · ${num(host.load5, 2)} <span class="sub">5m</span> · ${num(host.load15, 2)} <span class="sub">15m</span>${host.ncpu ? ` <span class="sub">/ ${host.ncpu} core${host.ncpu === 1 ? '' : 's'}</span>` : ''}${host.kind === 'shared' ? '<span class="shared-note">(host-wide)</span>' : ''}</span></div>
 
         <div class="metric" title="${host.kind === 'shared' ? 'Shared host: /proc/stat is the whole physical box, not our tenant. Number shown but ignored by status rollup.' : 'Sampled from /proc/stat over a 1.5s window.'}">
           <div class="metric-head">
