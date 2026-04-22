@@ -134,7 +134,7 @@ probe_host() {
         ($raw
           | split("\n")
           | map(select(length > 0) | split("|||"))
-          | map(select(length == 2))
+          | map(select(length == 2) | {key: .[0], value: .[1]})
           | from_entries) as $kv
         | {
             alias: $alias,
