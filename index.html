@@ -219,6 +219,17 @@
       return Number(v).toFixed(digits);
     }
 
+    function fmtMb(mb) {
+      if (mb === null || mb === undefined || Number.isNaN(mb)) return "—";
+      if (mb >= 1024) return (mb / 1024).toFixed(1) + " GB";
+      return Math.round(mb) + " MB";
+    }
+
+    function memAvailMb(host) {
+      if (host.mem_total_mb == null || host.mem_used_mb == null) return null;
+      return Math.max(0, host.mem_total_mb - host.mem_used_mb);
+    }
+
     function rollup(host) {
       if (!host.reachable) return "red";
       const load = host.load1 || 0;
@@ -280,7 +291,7 @@
         <div class="metric">
           <div class="metric-head">
             <span class="label">Memory</span>
-            <span class="value">${host.mem_used_mb ?? "—"} / ${host.mem_total_mb ?? "—"} MB · ${num(host.mem_used_pct, 1)}%</span>
+            <span class="value">${fmtMb(host.mem_used_mb)} used · ${fmtMb(memAvailMb(host))} avail of ${fmtMb(host.mem_total_mb)} · ${num(host.mem_used_pct, 1)}%</span>
           </div>
           <div class="bar"><div class="bar-fill ${barClass(mem, 80, 90)}" style="width:${mem}%"></div></div>
         </div>
