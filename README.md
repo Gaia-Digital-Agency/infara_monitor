@@ -75,12 +75,49 @@ If the identity-file diagnostic shows more than one key across the five hosts, e
 
 ### Locally (operator's Mac)
 
+This is the fastest way — no CI involved, no secrets plumbing, just one command.
+
+**Prerequisites** (one-time):
+- `git`, `ssh`, `jq`, `bash`, `awk`, `date` in `$PATH` (`brew install jq` if `jq` is missing).
+- `~/.ssh/config` has the five `Host` aliases and the matching key (`~/.ssh/id_ed25519_gaia`) is authorized on all five boxes. Confirm with:
+  ```bash
+  for h in gda-ce01 gda-ai01 gda-s01 hostinger-vps hostinger-wp; do
+    echo -n "$h: "; ssh -o BatchMode=yes -o ConnectTimeout=5 "$h" 'echo OK $(hostname)' 2>&1 | head -1
+  done
+  ```
+  Every line should start with `OK`. If any host says `Permission denied` or `Connection timed out`, fix SSH first — the refresh can't work around it.
+- The repo is cloned and its `origin` remote is writable (your shell can `git push` without prompting).
+
+**Run:**
+
 ```bash
 cd ~/Downloads/gaiada_infra_monitor
 ./scripts/refresh.sh
 ```
 
-The script SSHes to each host in parallel with an 8-second connect timeout, gathers uptime / load / CPU / memory / disk / kernel / OS in one round trip per host, writes `data/health.json`, commits with `health: snapshot <ISO-UTC>`, and pushes to `main`. GitHub Pages republishes within ~60 seconds.
+**What you'll see** (typical output, ~5 s):
+
+```
+→ probing 5 hosts in parallel…
+→ wrote /Users/.../data/health.json
+  G gda-ce01  load=1.04 mem=51.2% disk=70%  [green]
+  G gda-ai01  load=0.02 mem=48.5% disk=83%  [green]
+  G gda-s01  load=1.36 mem=43.5% disk=70%  [green]
+  G hostinger-vps  load=1.89 mem=24.3% disk=37%  [green]
+  G hostinger-wp  load=47.13 mem=62.8% disk=53%  [green shared]
+[main abcd123] health: snapshot 2026-04-22T05:14:11Z
+→ pushing to origin/main
+→ done
+```
+
+The script SSHes to each host in parallel with an 8-second connect timeout, captures uptime / load / CPU / memory / disk / kernel / OS in one round trip per host, writes `data/health.json` atomically, commits with `health: snapshot <ISO-UTC>`, and pushes to `main`. GitHub Pages republishes the dashboard within ~60 seconds — open <https://gaia-digital-agency.github.io/infara_monitor/> and hit **Refresh view** to see the new snapshot.
+
+**Troubleshooting:**
+
+- *`required tool 'jq' not found`* → `brew install jq`.
+- *Host shows `UNREACHABLE`* → test `ssh <alias>` by hand. Fix SSH before rerunning.
+- *`no change in data/health.json, not committing`* → the snapshot is byte-identical to what's already on disk; nothing to push. Rerun in a few seconds if you expected a change.
+- *`git push` fails with auth error* → your `origin` uses an SSH URL (`git@github.com-net1io:…`) that needs the `net1io` GitHub identity; confirm `ssh -T git@github.com-net1io` works.
 
 ### Via GitHub Actions
 
@@ -99,6 +136,8 @@ Per-host rollup:
 - **green** — reachable AND `load1 < 2.0` AND `mem_used_pct < 80` AND `disk_used_pct < 85`
 - **yellow** — any metric in the warning band (`load 2–4`, `mem 80–90%`, `disk 85–95%`)
 - **red** — unreachable OR any metric past the yellow band
+
+Hosts tagged `kind: "shared"` in `scripts/refresh.sh` (e.g. `hostinger-wp`) are graded on **disk + reachability only**. Their `/proc/loadavg` and `/proc/meminfo` report the physical host machine, not our tenant slice, so the numbers are meaningful (e.g. 47 load) without being actionable. The dashboard shows those figures with a `shared` badge and a *(host-wide)* note next to memory.
 
 The header badge on the dashboard rolls up to the worst per-host status.
 

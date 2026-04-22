@@ -17,6 +17,17 @@ set -euo pipefail
 
 HOSTS=(gda-ce01 gda-ai01 gda-s01 hostinger-vps hostinger-wp)
 
+# Hosts where /proc/{loadavg,meminfo} report the whole physical box (shared
+# hosting), not our tenant. We still probe them over SSH for reachability,
+# uptime, and disk, but the rollup ignores load/mem for these.
+# Uses a function (not `declare -A`) so it works on macOS's bash 3.2.
+host_kind() {
+  case "$1" in
+    hostinger-wp) echo "shared" ;;
+    *)            echo "vps" ;;
+  esac
+}
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA_DIR="$REPO_ROOT/data"
 OUT_FILE="$DATA_DIR/health.json"
@@ -116,6 +127,8 @@ REMOTE
 # ----------------------------------------------------------------------
 probe_host() {
   local alias="$1"
+  local kind
+  kind=$(host_kind "$alias")
   local out="$TMP_DIR/$alias.json"
   local log="$TMP_DIR/$alias.log"
   local checked_at
@@ -131,6 +144,7 @@ probe_host() {
         "$alias" "bash -s" <<<"$REMOTE_SCRIPT" >"$log" 2>&1; then
     jq -Rn \
       --arg alias "$alias" \
+      --arg kind "$kind" \
       --arg checked_at "$checked_at" \
       --rawfile raw "$log" '
         ($raw
@@ -140,6 +154,7 @@ probe_host() {
           | from_entries) as $kv
         | {
             alias: $alias,
+            kind: $kind,
             reachable: true,
             hostname: ($kv.HOSTNAME // null),
             uptime: ($kv.UPTIME // null),
@@ -166,10 +181,12 @@ probe_host() {
     [ -n "$err" ] || err="ssh failed (exit $rc)"
     jq -n \
       --arg alias "$alias" \
+      --arg kind "$kind" \
       --arg err "$err" \
       --arg checked_at "$checked_at" '
         {
           alias: $alias,
+          kind: $kind,
           reachable: false,
           ssh_error: $err,
           checked_at: $checked_at
@@ -212,10 +229,18 @@ echo "→ wrote $OUT_FILE"
 jq -r '
   .hosts[] |
   if .reachable then
-    (if   (.load1 >= 4) or (.mem_used_pct >= 90) or (.disk_used_pct >= 95) then "red"
-     elif (.load1 >= 2) or (.mem_used_pct >= 80) or (.disk_used_pct >= 85) then "yellow"
-     else "green" end) as $s
-    | "  \($s | ascii_upcase | .[0:1]) \(.alias)  load=\(.load1) mem=\(.mem_used_pct)% disk=\(.disk_used_pct)%  [\($s)]"
+    # Shared hosts see /proc stats for the whole physical box, not the
+    # tenant — ignore load/mem thresholds there and grade on disk only.
+    (if .kind == "shared" then
+       (if .disk_used_pct >= 95 then "red"
+        elif .disk_used_pct >= 85 then "yellow"
+        else "green" end)
+     else
+       (if   (.load1 >= 4) or (.mem_used_pct >= 90) or (.disk_used_pct >= 95) then "red"
+        elif (.load1 >= 2) or (.mem_used_pct >= 80) or (.disk_used_pct >= 85) then "yellow"
+        else "green" end)
+     end) as $s
+    | "  \($s | ascii_upcase | .[0:1]) \(.alias)  load=\(.load1) mem=\(.mem_used_pct)% disk=\(.disk_used_pct)%  [\($s)\(if .kind == "shared" then " shared" else "" end)]"
   else
     "  R \(.alias)  UNREACHABLE: \(.ssh_error)"
   end
