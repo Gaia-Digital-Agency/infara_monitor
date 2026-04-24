@@ -37,7 +37,7 @@ infara_monitor/
 The repo exists on GitHub but is empty. From the operator's Mac:
 
 ```bash
-cd ~/Downloads/gaiada_infra_monitor
+cd ~/Documents/gaiada_tools/gaiada_infra_monitor
 git init
 git branch -M main
 git remote add origin git@github.com-net1io:Gaia-Digital-Agency/infara_monitor.git
@@ -57,7 +57,7 @@ On the GitHub repo: **Settings → Pages → Source: `Deploy from a branch` → 
 Three **repository** secrets drive the Actions workflow (**Settings → Secrets and variables → Actions → New repository secret**). A helper script resolves the first two for you against the operator's live `~/.ssh/config`:
 
 ```bash
-cd ~/Downloads/gaiada_infra_monitor
+cd ~/Documents/gaiada_tools/gaiada_infra_monitor
 ./scripts/gen-secrets.sh
 ```
 
@@ -91,7 +91,7 @@ This is the fastest way — no CI involved, no secrets plumbing, just one comman
 **Run:**
 
 ```bash
-cd ~/Downloads/gaiada_infra_monitor
+cd ~/Documents/gaiada_tools/gaiada_infra_monitor
 ./scripts/refresh.sh
 ```
 
