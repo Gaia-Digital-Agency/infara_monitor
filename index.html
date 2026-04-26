@@ -150,6 +150,44 @@
       font-family: ui-monospace, "SF Mono", Menlo, monospace;
       line-height: 1.5;
     }
+    .reasons {
+      margin-top: 0.85rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .reasons.status-yellow { border-color: rgba(210, 153, 34, 0.4); background: rgba(210, 153, 34, 0.06); }
+    .reasons.status-red    { border-color: rgba(248, 81, 73, 0.4);  background: rgba(248, 81, 73, 0.06); }
+    .reasons-title {
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-bottom: 0.35rem;
+      font-weight: 500;
+    }
+    .reasons ul { list-style: none; margin: 0; padding: 0; }
+    .reasons li {
+      display: flex;
+      gap: 0.4rem;
+      align-items: baseline;
+      padding: 0.1rem 0;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      color: var(--text);
+    }
+    .reasons li .sev {
+      flex-shrink: 0;
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.05rem 0.35rem;
+      border-radius: 999px;
+      font-family: inherit;
+    }
+    .reasons li .sev.y { background: rgba(210, 153, 34, 0.18); color: var(--yellow); }
+    .reasons li .sev.r { background: rgba(248, 81, 73, 0.18); color: var(--red); }
     .error {
       color: var(--red);
       font-size: 0.85rem;
@@ -258,6 +296,43 @@
       return "green";
     }
 
+    function reasons(host, status) {
+      // Why is this host yellow/red? Mirrors rollup() thresholds so what the
+      // card claims and what this list says can never disagree.
+      if (status !== "yellow" && status !== "red") return [];
+      const out = [];
+      const disk = host.disk_used_pct || 0;
+      if (disk >= 95) out.push({ sev: "r", text: `Disk ${num(disk, 1)}% ≥ 95% (critical)` });
+      else if (disk >= 85) out.push({ sev: "y", text: `Disk ${num(disk, 1)}% ≥ 85% (warning)` });
+      // Shared hosts: load/mem reflect the physical box, not our tenant —
+      // so we deliberately skip them here, same as rollup().
+      if (host.kind !== "shared") {
+        const ncpu = host.ncpu || 1;
+        const loadPerCore = (host.load1 || 0) / ncpu;
+        if (loadPerCore >= 2) {
+          out.push({ sev: "r", text: `Load ${num(host.load1, 2)} on ${ncpu} core${ncpu === 1 ? '' : 's'} (${num(loadPerCore, 2)}/core ≥ 2.0, critical)` });
+        } else if (loadPerCore >= 1) {
+          out.push({ sev: "y", text: `Load ${num(host.load1, 2)} on ${ncpu} core${ncpu === 1 ? '' : 's'} (${num(loadPerCore, 2)}/core ≥ 1.0, warning)` });
+        }
+        const mem = host.mem_used_pct || 0;
+        if (mem >= 90) out.push({ sev: "r", text: `Memory ${num(mem, 1)}% ≥ 90% (critical)` });
+        else if (mem >= 80) out.push({ sev: "y", text: `Memory ${num(mem, 1)}% ≥ 80% (warning)` });
+      }
+      return out;
+    }
+
+    function renderReasons(host, status) {
+      const list = reasons(host, status);
+      if (!list.length) return "";
+      const items = list.map(r =>
+        `<li><span class="sev ${r.sev}">${r.sev === "r" ? "red" : "warn"}</span>${escapeHtml(r.text)}</li>`
+      ).join("");
+      return `<div class="reasons status-${status}">
+        <div class="reasons-title">Why ${status}</div>
+        <ul>${items}</ul>
+      </div>`;
+    }
+
     function escapeHtml(str) {
       return String(str == null ? "" : str).replace(/[&<>"']/g, c => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -325,6 +400,8 @@
           </div>
           <div class="bar"><div class="bar-fill ${barClass(disk, 85, 95)}" style="width:${disk}%"></div></div>
         </div>
+
+        ${renderReasons(host, status)}
 
         <div class="footer-meta">
           ${escapeHtml(host.os || "—")} · ${escapeHtml(host.kernel || "—")}<br>
