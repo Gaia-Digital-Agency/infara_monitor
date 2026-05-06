@@ -4,13 +4,13 @@ name: health
 #   gh workflow run health.yml
 #
 # Requires three repo secrets (Settings → Secrets and variables → Actions):
-#   SSH_PRIVATE_KEY  — private key authorized on all five hosts (contents of
+#   SSH_PRIVATE_KEY  — private key authorized on all six hosts (contents of
 #                      ~/.ssh/id_ed25519_gaia on the operator's Mac)
-#   SSH_CONFIG       — Host blocks for the five aliases (gda-ce01, gda-ai01,
-#                      gda-s01, hostinger-vps, hostinger-wp) copied verbatim
-#                      from the operator's ~/.ssh/config
+#   SSH_CONFIG       — Host blocks for the six aliases (gda-ce01, gda-pn01,
+#                      gda-ai01, gda-s01, hostinger-wp, hostinger-vps) copied
+#                      verbatim from the operator's ~/.ssh/config
 #   SSH_KNOWN_HOSTS  — output of `ssh-keyscan -H <host1> <host2> ...` for all
-#                      five real hostnames (not the aliases)
+#                      six real hostnames (not the aliases)
 on:
   workflow_dispatch:
   schedule:

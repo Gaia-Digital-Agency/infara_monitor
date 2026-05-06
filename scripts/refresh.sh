@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-HOSTS=(gda-ce01 gda-ai01 gda-s01 hostinger-vps hostinger-wp)
+HOSTS=(gda-ce01 gda-pn01 gda-ai01 gda-s01 hostinger-wp hostinger-vps)
 
 # Hosts where /proc/{loadavg,meminfo} report the whole physical box (shared
 # hosting), not our tenant. We still probe them over SSH for reachability,

@@ -235,7 +235,11 @@
 
   <script>
   (function () {
-    const HOSTS = ["gda-ce01", "gda-ai01", "gda-s01", "hostinger-vps", "hostinger-wp"];
+    // Card order = render order. With the auto-fill grid (minmax 320px, 1fr)
+    // a desktop viewport produces 3 columns, so this lays out as:
+    //   row 1: gda-ce01 · gda-pn01 · gda-ai01
+    //   row 2: gda-s01  · hostinger-wp · hostinger-vps
+    const HOSTS = ["gda-ce01", "gda-pn01", "gda-ai01", "gda-s01", "hostinger-wp", "hostinger-vps"];
 
     function formatTs(iso) {
       if (!iso) return "never";

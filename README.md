@@ -7,15 +7,16 @@ Static GitHub Pages dashboard that shows the latest health snapshot for Gaia's f
 
 ## Fleet
 
-Five SSH aliases (resolved via `~/.ssh/config` locally and via repo secrets in CI):
+Six SSH aliases (resolved via `~/.ssh/config` locally and via repo secrets in CI):
 
 | Alias | Role |
 | --- | --- |
 | `gda-ce01` | Gaia compute / edge node 01 |
+| `gda-pn01` | Gaia node 01 (added 2026-05-06) |
 | `gda-ai01` | Gaia AI node 01 |
 | `gda-s01` | Gaia services node 01 |
-| `hostinger-vps` | Hostinger VPS |
 | `hostinger-wp` | Hostinger WordPress box |
+| `hostinger-vps` | Hostinger VPS |
 
 ## Repo layout
 
@@ -81,7 +82,7 @@ This is the fastest way — no CI involved, no secrets plumbing, just one comman
 - `git`, `ssh`, `jq`, `bash`, `awk`, `date` in `$PATH` (`brew install jq` if `jq` is missing).
 - `~/.ssh/config` has the five `Host` aliases and the matching key (`~/.ssh/id_ed25519_gaia`) is authorized on all five boxes. Confirm with:
   ```bash
-  for h in gda-ce01 gda-ai01 gda-s01 hostinger-vps hostinger-wp; do
+  for h in gda-ce01 gda-pn01 gda-ai01 gda-s01 hostinger-wp hostinger-vps; do
     echo -n "$h: "; ssh -o BatchMode=yes -o ConnectTimeout=5 "$h" 'echo OK $(hostname)' 2>&1 | head -1
   done
   ```

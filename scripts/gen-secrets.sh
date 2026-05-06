@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-HOSTS=(gda-ce01 gda-ai01 gda-s01 hostinger-vps hostinger-wp)
+HOSTS=(gda-ce01 gda-pn01 gda-ai01 gda-s01 hostinger-wp hostinger-vps)
 MODE="${1:-all}"
 
 for t in ssh ssh-keygen ssh-keyscan awk sed; do

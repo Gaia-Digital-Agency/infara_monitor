@@ -9,13 +9,18 @@ Static GitHub Pages dashboard showing the latest health snapshot for Gaia's serv
 
 ## Hosts
 
-Five SSH aliases, resolved via the operator's `~/.ssh/config` locally and via repo secrets in CI:
+Six SSH aliases, resolved via the operator's `~/.ssh/config` locally and via repo secrets in CI:
 
 - `gda-ce01` — Gaia compute / edge node (VPS)
+- `gda-pn01` — Gaia node 01 (VPS, added 2026-05-06)
 - `gda-ai01` — Gaia AI node (VPS)
 - `gda-s01` — Gaia services node (VPS)
-- `hostinger-vps` — Hostinger VPS
 - `hostinger-wp` — Hostinger WordPress box (kind: `shared` — graded on disk + reachability only; load/mem report the host machine, not our tenant slice)
+- `hostinger-vps` — Hostinger VPS
+
+Dashboard layout (3-col desktop grid):
+- Top row: `gda-ce01` · `gda-pn01` · `gda-ai01`
+- Bottom row: `gda-s01` · `hostinger-wp` · `hostinger-vps`
 
 ## Repo layout
 
