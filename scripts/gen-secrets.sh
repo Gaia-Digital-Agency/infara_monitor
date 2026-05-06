@@ -73,7 +73,10 @@ gen_known_hosts() {
 # SSH_PRIVATE_KEY.
 # ----------------------------------------------------------------------
 gen_identity() {
-  local -A seen=()
+  # Indexed array used as a set — `local -A` (assoc-array) is bash 4+ and
+  # crashes macOS's default bash 3.2. Dedupe by linear scan instead; the
+  # input list is the fleet (≤10 hosts), so O(n²) is irrelevant here.
+  local seen=()
   for alias in "${HOSTS[@]}"; do
     # ssh -G can emit multiple identityfile lines; take the first.
     local id
@@ -81,16 +84,24 @@ gen_identity() {
     # expand ~
     id="${id/#\~/$HOME}"
     printf '  %-16s → %s\n' "$alias" "${id:-<unset>}"
-    [ -n "$id" ] && seen["$id"]=1
+    if [ -n "$id" ]; then
+      local found=0 s
+      # Use the [@]:+expansion form so an empty array doesn't trip set -u.
+      for s in "${seen[@]:+${seen[@]}}"; do
+        [ "$s" = "$id" ] && { found=1; break; }
+      done
+      [ "$found" -eq 0 ] && seen+=("$id")
+    fi
   done
   echo
   echo "Distinct identity files in use:"
-  for k in "${!seen[@]}"; do echo "  $k"; done
+  local k
+  for k in "${seen[@]:+${seen[@]}}"; do echo "  $k"; done
   if [ "${#seen[@]}" -gt 1 ]; then
     echo
-    echo "⚠  More than one key is in use across the five hosts." >&2
+    echo "⚠  More than one key is in use across the fleet." >&2
     echo "   The CI workflow assumes a SINGLE key at ~/.ssh/id_ed25519_gaia." >&2
-    echo "   Either (a) consolidate to one key authorized on all five hosts," >&2
+    echo "   Either (a) consolidate to one key authorized on all hosts," >&2
     echo "   or (b) adjust .github/workflows/health.yml to write multiple keys" >&2
     echo "   and keep per-host IdentityFile entries in SSH_CONFIG." >&2
   fi
